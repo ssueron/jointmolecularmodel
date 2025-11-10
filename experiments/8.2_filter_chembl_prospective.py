@@ -138,24 +138,24 @@ if __name__ == '__main__':
 
     # Get all fine-tuning data and load ChEMBL data
     finetuning_smiles = get_all_finetuning_molecules()
-    pretraining_smiles = pd.read_csv('data/clean/ChEMBL_33.csv').smiles.tolist()
+    pretraining_smiles = pd.read_csv('data/clean/ChEMBL_36.csv').smiles.tolist()
 
     # double check for vocab issues
     finetuning_smiles_clean, finetuning_smiles_failed = clean_mols(finetuning_smiles)
     chembl_smiles_clean, chembl_smiles_failed = clean_mols(pretraining_smiles)
 
     # remove all ChEMBL smiles that are too similar in their scaffold to the finetuning smiles
-    chembl33_passed, chembl33_discarded = filter_pretraining_smiles(chembl_smiles_clean['clean'], finetuning_smiles_clean['clean'])
+    chembl_passed, chembl_discarded = filter_pretraining_smiles(chembl_smiles_clean['clean'], finetuning_smiles_clean['clean'])
 
-    print(f"{len(chembl33_passed)} passed\n{len(chembl33_discarded)} discarded")
+    print(f"{len(chembl_passed)} passed\n{len(chembl_discarded)} discarded")
 
     # Save to file
-    pd.DataFrame({'smiles': chembl33_passed}).to_csv('data/clean/ChEMBL_33_filtered_prospective.csv', index=False)
-    pd.DataFrame({'smiles': chembl33_discarded}).to_csv('data/clean/ChEMBL_33_filtered_prospective_discarded.csv', index=False)
+    pd.DataFrame({'smiles': chembl_passed}).to_csv('data/clean/ChEMBL_36_filtered_prospective.csv', index=False)
+    pd.DataFrame({'smiles': chembl_discarded}).to_csv('data/clean/ChEMBL_36_filtered_prospective_discarded.csv', index=False)
 
     # 1,867,121 passed
     # 98,734 discarded
 
-    chembl = split_chembl(pd.DataFrame({'smiles': chembl33_passed}))
+    chembl = split_chembl(pd.DataFrame({'smiles': chembl_passed}))
 
-    chembl.to_csv(ospj(OUT_DIR_PATH, 'ChEMBL_33_split_prospective.csv'), index=False)
+    chembl.to_csv(ospj(OUT_DIR_PATH, 'ChEMBL_36_split_prospective.csv'), index=False)

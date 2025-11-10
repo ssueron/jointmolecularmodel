@@ -42,12 +42,12 @@ if __name__ == '__main__':
 
 
     # ChEMBL
-    table_S1['Dataset'].append('ChEMBL v33')
+    table_S1['Dataset'].append('ChEMBL v36')
     table_S1['Pharmalogical target'].append('-')
     table_S1['Endpoint'].append('-')
-    table_S1['Original size'].append(len(pd.read_table("data/ChEMBL/chembl_33_chemreps.txt")))
-    table_S1['Curated size'].append(len(pd.read_csv('data/clean/ChEMBL_33_filtered.csv')))
-    chembl_df = pd.read_csv('data/split/ChEMBL_33_split.csv')
+    table_S1['Original size'].append(len(pd.read_table("data/ChEMBL/chembl_36_chemreps.txt")))
+    table_S1['Curated size'].append(len(pd.read_csv('data/clean/ChEMBL_36_filtered.csv')))
+    chembl_df = pd.read_csv('data/split/ChEMBL_36_split.csv')
     table_S1['Train size'].append(len(chembl_df[chembl_df['split'] == 'train']))
     table_S1['TestID size'].append(len(chembl_df[chembl_df['split'] == 'test']))
     table_S1['TestOOD size'].append('-')

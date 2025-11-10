@@ -23,7 +23,7 @@ import argparse
 
 def load_datasets(config):
 
-    data_path = ospj('data/split/ChEMBL_33_split_prospective.csv')
+    data_path = ospj('data/split/ChEMBL_36_split_prospective.csv')
 
     # get the train and val SMILES from the pre-processed file
     chembl = pd.read_csv(data_path)

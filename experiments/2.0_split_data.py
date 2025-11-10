@@ -257,12 +257,12 @@ if __name__ == '__main__':
     os.chdir(ROOTDIR)
 
     # split ChEMBL
-    chembl = pd.read_csv(ospj(IN_DIR_PATH, 'ChEMBL_33_filtered.csv'))
+    chembl = pd.read_csv(ospj(IN_DIR_PATH, 'ChEMBL_36_filtered.csv'))
     chembl = split_chembl(chembl, test_frac=CHEMBL_TEST_FRACTION, val_frac=CHEMBL_VAL_FRACTION, random_state=1)
-    chembl.to_csv(ospj(OUT_DIR_PATH, 'ChEMBL_33_split.csv'), index=False)
+    chembl.to_csv(ospj(OUT_DIR_PATH, 'ChEMBL_36_split.csv'), index=False)
 
     # Split finetuning datasets
-    datasets = [i for i in os.listdir(IN_DIR_PATH) if not i.startswith('ChEMBL_33')]
+    datasets = [i for i in os.listdir(IN_DIR_PATH) if not i.startswith('ChEMBL_36')]
     for dataset in datasets:
         finetuning_df = pd.read_csv(ospj(IN_DIR_PATH, dataset))
         finetuning_df = split_finetuning_data(finetuning_df, ood_fraction=OOD_SET_FRACTION)

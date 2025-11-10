@@ -25,7 +25,7 @@ NBITS = 2048
 def get_all_finetuning_molecules() -> list[str]:
     """ Go through all finetuning datasets (ie everything but ChEMBL) and return the unique SMILES """
 
-    datasets = [i for i in os.listdir('data/clean') if not i.startswith('ChEMBL_33')]
+    datasets = [i for i in os.listdir('data/clean') if not i.startswith('ChEMBL_36')]
 
     smiles = []
     for dataset in datasets:
@@ -114,16 +114,16 @@ if __name__ == '__main__':
 
     # Get all fine-tuning data and load ChEMBL data
     finetuning_smiles = get_all_finetuning_molecules()
-    pretraining_smiles = pd.read_csv('data/clean/ChEMBL_33.csv').smiles.tolist()
+    pretraining_smiles = pd.read_csv('data/clean/ChEMBL_36.csv').smiles.tolist()
 
     # remove all ChEMBL smiles that are too similar in their scaffold to the finetuning smiles
-    chembl33_passed, chembl33_discarded = filter_pretraining_smiles(pretraining_smiles, finetuning_smiles)
+    chembl_passed, chembl_discarded = filter_pretraining_smiles(pretraining_smiles, finetuning_smiles)
 
-    print(f"{len(chembl33_passed)} passed\n{len(chembl33_discarded)} discarded")
+    print(f"{len(chembl_passed)} passed\n{len(chembl_discarded)} discarded")
 
     # Save to file
-    pd.DataFrame({'smiles': chembl33_passed}).to_csv('data/clean/ChEMBL_33_filtered.csv', index=False)
-    pd.DataFrame({'smiles': chembl33_discarded}).to_csv('data/clean/ChEMBL_33_filtered_discarded.csv', index=False)
+    pd.DataFrame({'smiles': chembl_passed}).to_csv('data/clean/ChEMBL_36_filtered.csv', index=False)
+    pd.DataFrame({'smiles': chembl_discarded}).to_csv('data/clean/ChEMBL_36_filtered_discarded.csv', index=False)
 
     # 1537551 passed
     # 428316 discarded

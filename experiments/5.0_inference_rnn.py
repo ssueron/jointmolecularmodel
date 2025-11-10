@@ -24,7 +24,7 @@ from cheminformatics.complexity import calculate_bertz_complexity, calculate_mol
 
 def load_datasets():
 
-    data_path = ospj('data/split/ChEMBL_33_split.csv')
+    data_path = ospj('data/split/ChEMBL_36_split.csv')
 
     # get the train and val SMILES from the pre-processed file
     chembl = pd.read_csv(data_path)
@@ -207,4 +207,3 @@ if __name__ == "__main__":
     distance_metrics = calc_distance_metrics(df_all, outdir)
     df_all = df_all.assign(**distance_metrics)
     df_all.to_csv(ospj(outdir, 'all_results_.csv'), index=False)
-

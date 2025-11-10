@@ -8,6 +8,7 @@ Eindhoven University of Technology
 """
 
 import os
+import argparse
 from collections import Counter
 import pandas as pd
 from cheminformatics.cleaning import clean_mols
@@ -123,10 +124,13 @@ def process_ames():
     df.to_csv(f'data/clean/Ames_mutagenicity.csv', index=False)
 
 
-def process_chembl():
+def process_chembl(version: int = 36):
 
-    # Read ChEMBL 33
-    chembl_smiles = pd.read_table("data/ChEMBL/chembl_33_chemreps.txt").canonical_smiles.tolist()
+    # Read ChEMBL
+    chembl_path = f"data/ChEMBL/chembl_{version}_chemreps.txt"
+    if not os.path.exists(chembl_path):
+        raise FileNotFoundError(f"Could not locate {chembl_path}. Place the chemreps file there or pass the correct version.")
+    chembl_smiles = pd.read_table(chembl_path).canonical_smiles.tolist()
 
     print('started with', len(chembl_smiles))  # 2,372,674
     # Clean smiles and get rid of duplicates
@@ -143,55 +147,62 @@ def process_chembl():
     print('uniques', len(chembl_smiles_clean))
 
     # Save cleaned SMILES strings to a csv file for later use
-    pd.DataFrame({'smiles': chembl_smiles_clean}).to_csv("data/clean/ChEMBL_33.csv", index=False)
+    output_path = f"data/clean/ChEMBL_{version}.csv"
+    pd.DataFrame({'smiles': chembl_smiles_clean}).to_csv(output_path, index=False)
+
+
+def required_files_exist(paths: list[str]) -> bool:
+    """Return True if all paths exist, else print warning and return False."""
+    missing = [path for path in paths if not os.path.exists(path)]
+    if missing:
+        print(f"Skipping step, missing required files: {missing}")
+        return False
+    return True
 
 
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser(description="Clean raw datasets into standardized CSV files.")
+    parser.add_argument('--datasets', nargs='+', choices=['litpcba', 'moleculeace', 'ames', 'chembl'],
+                        help="Subset of dataset groups to process. Defaults to all available.")
+    parser.add_argument('--chembl-version', type=int, default=36,
+                        help="ChEMBL release number to use for chemreps (default: 36).")
+    args = parser.parse_args()
+
+    selected_groups = set(args.datasets) if args.datasets else {'litpcba', 'moleculeace', 'ames', 'chembl'}
+
     os.chdir(ROOTDIR)
 
-    # LitPCBA datasets that are not giant and have a decent active/inactive ratio: 'ESR1_ant', 'TP53', 'PPARG'
-    process_litpcba('ESR1_ant')
-    process_litpcba('TP53')
-    process_litpcba('PPARG')
+    if 'litpcba' in selected_groups:
+        litpcba_sets = ['ESR1_ant', 'TP53', 'PPARG']
+        litpcba_processed = False
+        for dataset in litpcba_sets:
+            required = [f'data/LitPCBA/{dataset}/actives.smi', f'data/LitPCBA/{dataset}/inactives.smi']
+            if required_files_exist(required):
+                process_litpcba(dataset)
+                litpcba_processed = True
+        if not litpcba_processed:
+            print("No Lit-PCBA datasets were processed (missing files?).")
 
-    # MoleculeACE datasets
-    process_moleculeace('CHEMBL4203_Ki')
-    process_moleculeace('CHEMBL2034_Ki')
-    process_moleculeace('CHEMBL233_Ki')
-    process_moleculeace('CHEMBL4616_EC50')
-    process_moleculeace('CHEMBL287_Ki')
-    process_moleculeace('CHEMBL218_EC50')
-    process_moleculeace('CHEMBL264_Ki')
-    process_moleculeace('CHEMBL219_Ki')
-    process_moleculeace('CHEMBL2835_Ki')
-    process_moleculeace('CHEMBL2147_Ki')
-    process_moleculeace('CHEMBL231_Ki')
-    process_moleculeace('CHEMBL3979_EC50')
-    process_moleculeace('CHEMBL237_EC50')
-    process_moleculeace('CHEMBL244_Ki')
-    process_moleculeace('CHEMBL4792_Ki')
-    process_moleculeace('CHEMBL1871_Ki')
-    process_moleculeace('CHEMBL237_Ki')
-    process_moleculeace('CHEMBL262_Ki')
-    process_moleculeace('CHEMBL2047_EC50')
-    process_moleculeace('CHEMBL2971_Ki')
-    process_moleculeace('CHEMBL237_Ki')  # Why I accidentally have 29 MoleculACE files instead of 30. Too late to fix now
-    process_moleculeace('CHEMBL204_Ki')
-    process_moleculeace('CHEMBL214_Ki')
-    process_moleculeace('CHEMBL1862_Ki')
-    process_moleculeace('CHEMBL234_Ki')
-    process_moleculeace('CHEMBL238_Ki')
-    process_moleculeace('CHEMBL235_EC50')
-    process_moleculeace('CHEMBL4005_Ki')
-    process_moleculeace('CHEMBL236_Ki')
-    process_moleculeace('CHEMBL228_Ki')
+    if 'moleculeace' in selected_groups:
+        moleculeace_sets = ['CHEMBL4203_Ki', 'CHEMBL2034_Ki', 'CHEMBL233_Ki', 'CHEMBL4616_EC50', 'CHEMBL287_Ki',
+                            'CHEMBL218_EC50', 'CHEMBL264_Ki', 'CHEMBL219_Ki', 'CHEMBL2835_Ki', 'CHEMBL2147_Ki',
+                            'CHEMBL231_Ki', 'CHEMBL3979_EC50', 'CHEMBL237_EC50', 'CHEMBL244_Ki', 'CHEMBL4792_Ki',
+                            'CHEMBL1871_Ki', 'CHEMBL237_Ki', 'CHEMBL262_Ki', 'CHEMBL2047_EC50', 'CHEMBL2971_Ki',
+                            'CHEMBL237_Ki', 'CHEMBL204_Ki', 'CHEMBL214_Ki', 'CHEMBL1862_Ki', 'CHEMBL234_Ki',
+                            'CHEMBL238_Ki', 'CHEMBL235_EC50', 'CHEMBL4005_Ki', 'CHEMBL236_Ki', 'CHEMBL228_Ki']
+        for dataset in moleculeace_sets:
+            path = f'data/moleculeace_original/{dataset}.csv'
+            if required_files_exist([path]):
+                process_moleculeace(dataset)
 
-    # Ames Mutagenicity dataset
-    process_ames()  # many molecules in this dataset are either charged or invalid SMILES strings
+    if 'ames' in selected_groups:
+        ames_source = 'data/Ames_mutagenicity/smiles_cas_N6512.smi'
+        if required_files_exist([ames_source]):
+            process_ames()
 
-    # The pre-training data: ChEMBL33
-    process_chembl()
+    if 'chembl' in selected_groups:
+        process_chembl(version=args.chembl_version)
 
     # Parsing errors:
     # Does not fit vocab: 231632

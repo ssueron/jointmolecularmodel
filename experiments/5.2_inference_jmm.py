@@ -130,7 +130,7 @@ if __name__ == '__main__':
     for dataset in all_datasets:
         print(dataset)
 
-        if 'ChEMBL_33' not in dataset:
+        if 'ChEMBL_36' not in dataset:
 
             all_results = []
 
