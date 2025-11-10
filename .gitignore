@@ -10,4 +10,10 @@ __pycache__/
 
 # Données lourdes
 data/
+results/.DS_Store
+__pycache__/
+*.py[cod]
+.venv
+.env
+data/
 results/
