@@ -59,9 +59,19 @@ if __name__ == '__main__':
     for i, dataset_name in enumerate(all_dataset_names):
         print(f"\n{i}\t{dataset_name}")
 
-        # load the data and get rid of all columns that might be in there
+        # load the data and keep the columns that are needed downstream
         df = load_dataset_df(dataset_name)
-        df = df.loc[:, ['smiles', 'y', 'cluster', 'split']]
+        required_columns = {'smiles', 'split'}
+        missing = required_columns - set(df.columns)
+        if missing:
+            raise ValueError(f"{dataset_name} is missing required columns: {', '.join(sorted(missing))}")
+
+        optional_columns = [col for col in ['y', 'cluster'] if col in df.columns]
+        missing_optional = [col for col in ['y', 'cluster'] if col not in df.columns]
+        if missing_optional:
+            print(f"\t\tSkipping unavailable columns for {dataset_name}: {', '.join(missing_optional)}")
+
+        df = df.loc[:, ['smiles'] + optional_columns + ['split']]
 
         # get the smiles strings
         train_smiles = df[df['split'] == 'train'].smiles.tolist()
