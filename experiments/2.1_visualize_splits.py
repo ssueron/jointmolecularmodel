@@ -6,6 +6,7 @@ Eindhoven University of Technology
 June 2024
 """
 
+import argparse
 import os
 from os.path import join as ospj
 import pandas as pd
@@ -18,6 +19,16 @@ import seaborn as sns
 from tqdm import tqdm
 from constants import ROOTDIR
 from sklearn.decomposition import TruncatedSVD
+
+
+def to_split_filename(name: str) -> str:
+    """Normalize user-provided dataset names to '<dataset>_split.csv'."""
+    filename = name
+    if filename.endswith('.csv'):
+        filename = filename[:-4]
+    if filename.endswith('_split'):
+        filename = filename[:-6]
+    return f"{filename}_split.csv"
 
 
 def tsne_mols(mols: list, split: list[str], **kwargs) -> pd.DataFrame:
@@ -43,12 +54,25 @@ def tsne_mols(mols: list, split: list[str], **kwargs) -> pd.DataFrame:
 
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser(description="Visualize dataset splits with TSNE.")
+    parser.add_argument('--datasets', nargs='+',
+                        help="Dataset names (e.g. CHEMBL4203_Ki). Use 'ChEMBL_36' for the pretraining set.")
+    parser.add_argument('--include-chembl', action='store_true',
+                        help="Include ChEMBL_36 when automatically discovering datasets.")
+    args = parser.parse_args()
+
     IN_DIR_PATH = 'data/split'
     OUT_DIR_PATH = 'results/dataset_clustering'
     os.chdir(ROOTDIR)
+    os.makedirs(OUT_DIR_PATH, exist_ok=True)
 
-    datasets = [i for i in os.listdir(IN_DIR_PATH) if i.endswith('split.csv')]
-    datasets = [i for i in datasets if i != 'ChEMBL_36_split.csv']
+    if args.datasets:
+        datasets = [to_split_filename(name) for name in args.datasets]
+    else:
+        datasets = [i for i in os.listdir(IN_DIR_PATH) if i.endswith('split.csv')]
+        if not args.include_chembl:
+            datasets = [i for i in datasets if i != 'ChEMBL_36_split.csv']
+    datasets = [f for f in datasets if os.path.exists(ospj(IN_DIR_PATH, f))]
 
     tsne_coordinates = []
 
@@ -94,7 +118,7 @@ if __name__ == '__main__':
 
         fig.suptitle(f'TSNE of {dataset.replace("_split.csv", "")} (n={len(smiles)})')
         plt.savefig(ospj(OUT_DIR_PATH, dataset.replace('.csv', '.pdf')))
-        plt.show()
+        plt.close(fig)
 
     # save the file with all results
     tsne_coordinates = pd.concat(tsne_coordinates)

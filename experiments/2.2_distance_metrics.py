@@ -5,6 +5,7 @@ Eindhoven University of Technology
 Augustus 2024
 """
 
+import argparse
 import os
 from os.path import join as ospj
 from tqdm.auto import tqdm
@@ -17,7 +18,24 @@ from cheminformatics.descriptors import num_rings, n_smiles_branches, n_smiles_t
 from constants import ROOTDIR
 
 
+def normalize_dataset_name(name: str) -> str:
+    """Return base dataset name that matches files under data/split/."""
+    dataset = name
+    if dataset.endswith('.csv'):
+        dataset = dataset[:-4]
+    if dataset.endswith('_split'):
+        dataset = dataset[:-6]
+    return dataset
+
+
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description="Compute similarity and complexity metrics for selected datasets.")
+    parser.add_argument('--datasets', nargs='+',
+                        help="Dataset names (e.g. CHEMBL4203_Ki). Use 'ChEMBL_36' for the pretraining set.")
+    parser.add_argument('--include-chembl', action='store_true',
+                        help="Include ChEMBL_36 when automatically discovering datasets.")
+    args = parser.parse_args()
 
     # move to root dir
     os.chdir(ROOTDIR)
@@ -26,7 +44,16 @@ if __name__ == '__main__':
     KNN_AD_NMIN = 10
     KNN_AD_SCUTOFF = 0.25
 
-    all_dataset_names = get_all_dataset_names()
+    if args.datasets:
+        all_dataset_names = [normalize_dataset_name(name) for name in args.datasets]
+    else:
+        all_dataset_names = get_all_dataset_names()
+        chembl_split = ospj('data', 'split', 'ChEMBL_36_split.csv')
+        if args.include_chembl and os.path.exists(chembl_split) and 'ChEMBL_36' not in all_dataset_names:
+            all_dataset_names.append('ChEMBL_36')
+
+    metrics_dir = ospj('data', 'datasets_with_metrics')
+    os.makedirs(metrics_dir, exist_ok=True)
 
     all_data = []
     for i, dataset_name in enumerate(all_dataset_names):
@@ -74,19 +101,19 @@ if __name__ == '__main__':
         df['sdc_ad'] = sdc_ad
 
         # write to file
-        df.to_csv(ospj('data', 'datasets_with_metrics', f'{dataset_name}.csv'), index=False)
+        df.to_csv(ospj(metrics_dir, f'{dataset_name}.csv'), index=False)
 
         df['dataset'] = dataset_name
         all_data.append(df)
 
-    pd.concat(all_data).to_csv(ospj('data', 'datasets_with_metrics', 'all_datasets.csv'), index=False)
+    pd.concat(all_data).to_csv(ospj(metrics_dir, 'all_datasets.csv'), index=False)
 
     # second round
     all_data2 = []
     for i, dataset_name in enumerate(all_dataset_names):
         print(f"\n{i}\t{dataset_name}")
 
-        df_ = pd.read_csv(ospj('data', 'datasets_with_metrics', f'{dataset_name}.csv'))
+        df_ = pd.read_csv(ospj(metrics_dir, f'{dataset_name}.csv'))
 
         # Number of SMILES tokens
         df_['n_smiles_tokens'] = [n_smiles_tokens_no_specials(smi) for smi in df_.smiles]
@@ -101,9 +128,9 @@ if __name__ == '__main__':
         df_['mol_weight'] = [mol_weight(smi) for smi in df_.smiles]
 
         # write to file
-        df_.to_csv(ospj('data', 'datasets_with_metrics', f'{dataset_name}.csv'), index=False)
+        df_.to_csv(ospj(metrics_dir, f'{dataset_name}.csv'), index=False)
 
         df_['dataset'] = dataset_name
         all_data2.append(df_)
 
-    pd.concat(all_data2).to_csv(ospj('data', 'datasets_with_metrics', 'all_datasets.csv'), index=False)
+    pd.concat(all_data2).to_csv(ospj(metrics_dir, 'all_datasets.csv'), index=False)
